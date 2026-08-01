@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC Treasure Hunt — Введи цифровой код с чипа</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0c0a0f;
+            color: #e0d6c8;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-image: radial-gradient(circle at 20% 30%, #1e1625 0%, #0a070e 90%);
+        }
+
+        .app {
+            max-width: 750px;
+            width: 100%;
+            background: #14101b;
+            padding: 35px 30px 40px;
+            border-radius: 40px;
+            border: 1px solid #3d2a4a;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(90, 40, 120, 0.2);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #e8d5a3, #b88a5a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header h1 small {
+            font-size: 0.8rem;
+            -webkit-text-fill-color: #8a7a6a;
+            display: block;
+            font-weight: 400;
+            letter-spacing: 3px;
+        }
+
+        .level-badge {
+            background: #241d2b;
+            padding: 10px 22px;
+            border-radius: 60px;
+            border: 1px solid #5a4068;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #cfb8e0;
+        }
+
+        .level-badge span {
+            color: #f5d742;
+            font-size: 1.4rem;
+        }
+
+        .info-block {
+            background: #0e0b12;
+            border-radius: 28px;
+            padding: 25px 28px;
+            margin: 20px 0 25px;
+            border-left: 6px solid #7a5a8a;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #6a5a7a;
+            margin-bottom: 8px;
+        }
+
+        .info-text {
+            font-size: 1.3rem;
+            line-height: 1.6;
+            color: #f0e8dc;
+            font-weight: 500;
+        }
+
+        .info-text .highlight {
+            color: #f5d742;
+            font-weight: 700;
+        }
+
+        .info-text .radius {
+            color: #8ab8d9;
+            font-weight: 700;
+        }
+
+        .info-text .coords {
+            color: #7ddfa0;
+            font-weight: 700;
+        }
+
+        .photo-placeholder {
+            margin: 15px 0 20px;
+            background: #0a070e;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            border: 2px dashed #3d2a4a;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+
+        .photo-placeholder img {
+            max-width: 100%;
+            border-radius: 16px;
+            max-height: 300px;
+            object-fit: cover;
+        }
+
+        .photo-placeholder .no-photo {
+            color: #5a4a5a;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .photo-placeholder .no-photo span {
+            display: block;
+            font-size: 2.5rem;
+            margin-bottom: 6px;
+        }
+
+        /* ВВОД КОДА (только цифры) */
+        .code-section {
+            background: #0a070e;
+            border-radius: 20px;
+            padding: 22px 25px;
+            margin: 20px 0;
+            border: 2px solid #2a1a30;
+        }
+
+        .code-section label {
+            display: block;
+            font-size: 0.85rem;
+            color: #8a7a8a;
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .code-section label .nfc-icon {
+            font-size: 1.4rem;
+            vertical-align: middle;
+        }
+
+        .code-input-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .code-input-group input {
+            flex: 1;
+            min-width: 200px;
+            padding: 16px 20px;
+            background: #0e0b12;
+            border: 2px solid #3d2a4a;
+            border-radius: 16px;
+            color: #f0e8dc;
+            font-size: 1.3rem;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 6px;
+            transition: 0.3s;
+            outline: none;
+        }
+
+        .code-input-group input:focus {
+            border-color: #7a5a8a;
+            box-shadow: 0 0 20px rgba(90, 40, 120, 0.3);
+        }
+
+        .code-input-group input:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .code-input-group input::placeholder {
+            letter-spacing: 2px;
+            font-size: 1rem;
+            color: #4a3a4a;
+        }
+
+        .code-input-group button {
+            padding: 16px 35px;
+            background: linear-gradient(135deg, #4a2a5a, #6a3a7a);
+            border: none;
+            border-radius: 16px;
+            color: #fff6e8;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.25s;
+            font-family: inherit;
+            border: 2px solid #b080c0;
+            box-shadow: 0 0 30px rgba(120, 60, 160, 0.2);
+            white-space: nowrap;
+        }
+
+        .code-input-group button:hover:not(:disabled) {
+            transform: scale(1.03);
+            box-shadow: 0 0 50px rgba(160, 80, 200, 0.4);
+        }
+
+        .code-input-group button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .code-status {
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: #8a7a8a;
+            min-height: 24px;
+        }
+
+        .code-status.error {
+            color: #e07070;
+        }
+
+        .code-status.success {
+            color: #7ddfa0;
+        }
+
+        /* КНОПКИ ВЫБОРА */
+        .choice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0 18px;
+        }
+
+        .btn-choice {
+            padding: 18px 12px;
+            border: none;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.25s;
+            font-family: inherit;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-choice:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-free {
+            background: #1f1a26;
+            color: #b0a0b8;
+            border: 2px solid #3d2a4a;
+        }
+
+        .btn-free:hover:not(:disabled) {
+            background: #2d2438;
+            border-color: #7a5a8a;
+            transform: scale(1.02);
+        }
+
+        .btn-paid {
+            background: linear-gradient(135deg, #4a2a5a, #6a3a7a);
+            color: #fff6e8;
+            border: 2px solid #b080c0;
+            box-shadow: 0 0 30px rgba(120, 60, 160, 0.3);
+        }
+
+        .btn-paid:hover:not(:disabled) {
+            transform: scale(1.03);
+            box-shadow: 0 0 50px rgba(160, 80, 200, 0.5);
+            background: linear-gradient(135deg, #5a3a6a, #8a4a9a);
+        }
+
+        .btn-choice:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .price-tag {
+            text-align: center;
+            color: #b0a0b8;
+            font-size: 0.85rem;
+            margin: 6px 0 16px;
+        }
+
+        .price-tag strong {
+            color: #f5d742;
+            font-size: 1.1rem;
+        }
+
+        .log {
+            margin-top: 28px;
+            padding: 18px 22px;
+            background: #0a070e;
+            border-radius: 20px;
+            border: 1px solid #2a1a30;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+
+        .log::-webkit-scrollbar {
+            width: 4px;
+        }
+        .log::-webkit-scrollbar-track {
+            background: #0a070e;
+        }
+        .log::-webkit-scrollbar-thumb {
+            background: #4a2a5a;
+            border-radius: 10px;
+        }
+
+        .log-entry {
+            padding: 6px 0;
+            border-bottom: 1px dotted #1e1625;
+            color: #b0a0b8;
+        }
+
+        .log-entry .time {
+            color: #6a5a6a;
+            margin-right: 14px;
+            font-size: 0.75rem;
+        }
+
+        .log-entry.success {
+            color: #7ddfa0;
+        }
+        .log-entry.paid {
+            color: #f5d742;
+        }
+        .log-entry.free {
+            color: #8ab8d9;
+        }
+        .log-entry.error {
+            color: #e07070;
+        }
+
+        .log-empty {
+            color: #4a3a4a;
+            text-align: center;
+            font-style: italic;
+            padding: 10px 0;
+        }
+
+        .reset-area {
+            text-align: center;
+            margin-top: 22px;
+        }
+
+        .btn-reset {
+            background: transparent;
+            border: 1px solid #3d2a4a;
+            color: #6a5a6a;
+            padding: 10px 30px;
+            border-radius: 60px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-reset:hover {
+            border-color: #7a5a8a;
+            color: #b0a0b8;
+            background: #1a1420;
+        }
+
+        .final-block {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .final-block .treasure {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .final-block .coords {
+            background: #0a070e;
+            padding: 20px;
+            border-radius: 16px;
+            font-size: 1.5rem;
+            font-family: 'Courier New', monospace;
+            color: #f5d742;
+            border: 2px solid #f5d742;
+            display: inline-block;
+            padding: 20px 40px;
+        }
+
+        @media (max-width: 550px) {
+            .app {
+                padding: 20px 16px;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            .choice-grid {
+                grid-template-columns: 1fr;
+            }
+            .info-text {
+                font-size: 1.05rem;
+            }
+            .btn-choice {
+                padding: 14px 10px;
+                font-size: 1rem;
+            }
+            .level-badge {
+                font-size: 0.8rem;
+                padding: 6px 14px;
+            }
+            .code-input-group {
+                flex-direction: column;
+            }
+            .code-input-group button {
+                width: 100%;
+            }
+            .final-block .coords {
+                font-size: 1rem;
+                padding: 12px 20px;
+            }
+            .code-input-group input {
+                font-size: 1.1rem;
+                letter-spacing: 4px;
+                min-width: 140px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app" id="app">
+    <!-- ХЕДЕР -->
+    <div class="header">
+        <h1>
+            🏴‍☠️ NFC HUNT
+            <small>охота за чипом</small>
+        </h1>
+        <div class="level-badge">
+            Уровень <span id="levelDisplay">1</span> / 3
+        </div>
+    </div>
+
+    <!-- ИНФО БЛОК -->
+    <div class="info-block">
+        <div class="info-label">📍 Информация о местонахождении чипа</div>
+        <div class="info-text" id="infoText">
+            <span class="radius">📍 Радиус 50 метров</span><br>
+            от старого фонаря в парке.
+        </div>
+    </div>
+
+    <!-- ФОТО -->
+    <div class="photo-placeholder" id="photoBlock">
+        <div class="no-photo">
+            <span>🔒</span>
+            Фото доступно только<br>при покупке точных координат
+        </div>
+    </div>
+
+    <!-- ВВОД ЦИФРОВОГО КОДА -->
+    <div class="code-section" id="codeSection">
+        <label>
+            <span class="nfc-icon">📱</span> Введи код с NFC-чипа (только цифры)
+        </label>
+        <div class="code-input-group">
+            <input type="text" id="codeInput" placeholder="88556143205" maxlength="20" inputmode="numeric" autocomplete="off">
+            <button id="verifyBtn">🔓 Проверить</button>
+        </div>
+        <div class="code-status" id="codeStatus">Ожидание ввода кода...</div>
+    </div>
+
+    <!-- КНОПКИ ВЫБОРА -->
+    <div class="choice-grid">
+        <button class="btn-choice btn-free" id="freeBtn">
+            🆓 Бесплатно<br>
+            <small style="font-weight:400;font-size:0.75rem;opacity:0.7;">только радиус 50м</small>
+        </button>
+        <button class="btn-choice btn-paid" id="paidBtn">
+            💰 Купить точные координаты<br>
+            <small style="font-weight:400;font-size:0.75rem;opacity:0.9;">фото + GPS</small>
+        </button>
+    </div>
+
+    <div class="price-tag">
+        💎 Точные координаты + фото — <strong>99 ₽</strong>
+    </div>
+
+    <!-- ЖУРНАЛ -->
+    <div class="log" id="logContainer">
+        <div class="log-empty">🕵️ Здесь будет история твоих действий...</div>
+    </div>
+
+    <!-- СБРОС -->
+    <div class="reset-area">
+        <button class="btn-reset" id="resetBtn">⟳ Начать сначала</button>
+    </div>
+</div>
+
+<script>
+    // ----- БАЗА ДАННЫХ (ЦИФРОВЫЕ КОДЫ) -----
+    const LEVEL_CODES = {
+        1: '88556143205',   // код для чипа #1
+        2: '44219876321',   // код для чипа #2
+        3: '99123456789'    // код для чипа #3
+    };
+
+    const LEVELS = [
+        {
+            level: 1,
+            radius: '📍 Радиус 50 метров от старого фонаря в парке.',
+            coords: '📍 Точные координаты: 55.7558° N, 37.6173° E<br>Фонарь с красной крышей, у входа в парк.',
+            photo: 'https://picsum.photos/id/244/600/300'
+        },
+        {
+            level: 2,
+            radius: '📍 Радиус 40 метров от беседки у пруда.',
+            coords: '📍 Точные координаты: 55.7559° N, 37.6175° E<br>Беседка с синей крышей, западный берег пруда.',
+            photo: 'https://picsum.photos/id/221/600/300'
+        },
+        {
+            level: 3,
+            radius: '📍 Радиус 30 метров от старого дуба у ручья.',
+            coords: '📍 Точные координаты: 55.7560° N, 37.6177° E<br>Дуб с развилкой на высоте 2 метров.',
+            photo: 'https://picsum.photos/id/156/600/300'
+        }
+    ];
+
+    const FINAL_COORDS = '55.7565° N, 37.6180° E';
+
+    // ----- СОСТОЯНИЕ -----
+    let currentLevel = 0;
+    let levelCompleted = false;
+    let gameCompleted = false;
+    let logEntries = [];
+    let paidForLevel = false;
+
+    // DOM
+    const infoText = document.getElementById('infoText');
+    const photoBlock = document.getElementById('photoBlock');
+    const levelDisplay = document.getElementById('levelDisplay');
+    const freeBtn = document.getElementById('freeBtn');
+    const paidBtn = document.getElementById('paidBtn');
+    const codeInput = document.getElementById('codeInput');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const codeStatus = document.getElementById('codeStatus');
+    const logContainer = document.getElementById('logContainer');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // ----- ФУНКЦИИ -----
+    function getLevelData() {
+        if (gameCompleted) return null;
+        return LEVELS[currentLevel];
+    }
+
+    function renderLevel() {
+        if (gameCompleted) {
+            levelDisplay.textContent = '🏁';
+            const infoBlock = document.querySelector('.info-block');
+            infoBlock.innerHTML = `
+                <div class="final-block">
+                    <div class="treasure">💎</div>
+                    <div class="coords">${FINAL_COORDS}</div>
+                    <p style="margin-top:20px;color:#b0a0b8;">🔑 Используй эти координаты, чтобы найти клад!</p>
+                </div>
+            `;
+            photoBlock.style.display = 'none';
+            freeBtn.style.display = 'none';
+            paidBtn.style.display = 'none';
+            document.querySelector('.price-tag').style.display = 'none';
+            document.getElementById('codeSection').style.display = 'none';
+            return;
+        }
+
+        const data = getLevelData();
+        if (!data) return;
+
+        levelDisplay.textContent = data.level;
+
+        // Инфо: радиус или координаты
+        if (paidForLevel) {
+            infoText.innerHTML = `<span class="coords">${data.coords}</span>`;
+            photoBlock.innerHTML = `<img src="${data.photo}" alt="Фото места">`;
+        } else {
+            infoText.innerHTML = `<span class="radius">${data.radius}</span>`;
+            photoBlock.innerHTML = `
+                <div class="no-photo">
+                    <span>🔒</span>
+                    Фото доступно только<br>при покупке точных координат
+                </div>
+            `;
+        }
+
+        freeBtn.disabled = levelCompleted;
+        paidBtn.disabled = levelCompleted;
+
+        // Секция кода
+        if (levelCompleted) {
+            const codeSection = document.getElementById('codeSection');
+            codeSection.style.display = 'block';
+            codeSection.innerHTML = `
+                <div style="text-align:center;padding:10px;">
+                    <span style="color:#7ddfa0;font-size:1.2rem;">✅ Чип найден и код подтверждён!</span><br>
+                    <button onclick="goToNextLevel()" style="margin-top:12px;padding:14px 40px;background:linear-gradient(135deg,#4a2a5a,#6a3a7a);border:none;border-radius:16px;color:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;border:2px solid #b080c0;">
+                        ➡️ Перейти на следующий уровень
+                    </button>
+                </div>
+            `;
+        } else {
+            const codeSection = document.getElementById('codeSection');
+            codeSection.style.display = 'block';
+            if (!codeSection.querySelector('input')) {
+                codeSection.innerHTML = `
+                    <label>
+                        <span class="nfc-icon">📱</span> Введи код с NFC-чипа (только цифры)
+                    </label>
+                    <div class="code-input-group">
+                        <input type="text" id="codeInput" placeholder="88556143205" maxlength="20" inputmode="numeric" autocomplete="off">
+                        <button id="verifyBtn">🔓 Проверить</button>
+                    </div>
+                    <div class="code-status" id="codeStatus">Ожидание ввода кода...</div>
+                `;
+                document.getElementById('verifyBtn').addEventListener('click', verifyCode);
+                document.getElementById('codeInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') verifyCode();
+                });
+                // Ограничиваем ввод только цифрами
+                document.getElementById('codeInput').addEventListener('input', function() {
+                    this.value = this.value.replace(/\D/g, '');
+                });
+            }
+            const status = document.getElementById('codeStatus');
+            if (status) {
+                status.textContent = 'Ожидание ввода кода...';
+                status.className = 'code-status';
+            }
+        }
+    }
+
+    function addLog(message, type = '') {
+        const time = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        logEntries.push({ time, message, type });
+        renderLog();
+    }
+
+    function renderLog() {
+        if (logEntries.length === 0) {
+            logContainer.innerHTML = `<div class="log-empty">🕵️ Здесь будет история твоих действий...</div>`;
+            return;
+        }
+        logContainer.innerHTML = logEntries.map(entry =>
+            `<div class="log-entry ${entry.type}">
+                <span class="time">[${entry.time}]</span> ${entry.message}
+            </div>`
+        ).join('');
+        logContainer.scrollTop = 0;
+    }
+
+    // ----- ОБРАБОТЧИКИ -----
+    function handleFree() {
+        if (gameCompleted || levelCompleted) return;
+        const data = getLevelData();
+        if (!data) return;
+
+        paidForLevel = false;
+        addLog(`🆓 Выбрал бесплатный вариант: ${data.radius}`, 'free');
+        renderLevel();
+        codeStatus.textContent = '🔍 Ищи чип в указанном радиусе!';
+        codeStatus.className = 'code-status';
+    }
+
+    function handlePaid() {
+        if (gameCompleted || levelCompleted) return;
+        const data = getLevelData();
+        if (!data) return;
+
+        const paid = confirm(`💰 Оплатить 99 ₽ за точные координаты + фото?`);
+        if (!paid) {
+            addLog('❌ Оплата отменена', 'error');
+            return;
+        }
+
+        paidForLevel = true;
+        addLog(`💎 Куплены точные координаты: ${data.coords}`, 'paid');
+        renderLevel();
+        codeStatus.textContent = '📍 Теперь ищи чип! После находки введи код.';
+        codeStatus.className = 'code-status success';
+    }
+
+    function verifyCode() {
+        if (gameCompleted) return;
+        if (levelCompleted) {
+            codeStatus.textContent = '⏳ Этот уровень уже пройден!';
+            codeStatus.className = 'code-status';
+            return;
+        }
+
+        const inputCode = codeInput.value.trim();
+        if (!inputCode) {
+            codeStatus.textContent = '❌ Введи код с NFC-чипа!';
+            codeStatus.className = 'code-status error';
+            return;
+        }
+
+        // Проверяем, что только цифры
+        if (!/^\d+$/.test(inputCode)) {
+            codeStatus.textContent = '❌ Код должен содержать только цифры!';
+            codeStatus.className = 'code-status error';
+            codeInput.value = '';
+            return;
+        }
+
+        const expectedCode = LEVEL_CODES[currentLevel + 1];
+        if (!expectedCode) {
+            codeStatus.textContent = '❌ Ошибка системы';
+            codeStatus.className = 'code-status error';
+            return;
+        }
+
+        if (inputCode === expectedCode) {
+            levelCompleted = true;
+            addLog(`✅ Код "${inputCode}" подтверждён! Уровень ${currentLevel + 1} пройден.`, 'success');
+            codeStatus.textContent = '✅ Код верный! Отлично!';
+            codeStatus.className = 'code-status success';
+            renderLevel();
+        } else {
+            addLog(`❌ Неверный код: "${inputCode}"`, 'error');
+            codeStatus.textContent = '❌ Неверный код! Попробуй ещё раз.';
+            codeStatus.className = 'code-status error';
+            codeInput.value = '';
+            codeInput.focus();
+        }
+    }
+
+    function goToNextLevel() {
+        if (!levelCompleted && !gameCompleted) {
+            addLog('⚠️ Сначала найди чип и введи код!', 'error');
+            return;
+        }
+
+        if (currentLevel < LEVELS.length - 1) {
+            currentLevel++;
+            levelCompleted = false;
+            paidForLevel = false;
+            addLog(`➡️ Переход на уровень ${currentLevel + 1}`, '');
+            document.getElementById('codeSection').style.display = 'block';
+            renderLevel();
+        } else {
+            gameCompleted = true;
+            addLog('🏆 ВСЕ УРОВНИ ПРОЙДЕНЫ! ФИНАЛЬНЫЕ КООРДИНАТЫ ПОЛУЧЕНЫ!', 'success');
+            renderLevel();
+        }
+    }
+
+    function resetGame() {
+        if (confirm('🔄 Точно начать сначала? Весь прогресс сбросится.')) {
+            currentLevel = 0;
+            levelCompleted = false;
+            gameCompleted = false;
+            paidForLevel = false;
+            logEntries = [];
+            document.querySelector('.price-tag').style.display = 'block';
+            freeBtn.style.display = '';
+            paidBtn.style.display = '';
+            photoBlock.style.display = '';
+            document.querySelector('.info-block').innerHTML = `
+                <div class="info-label">📍 Информация о местонахождении чипа</div>
+                <div class="info-text" id="infoText">
+                    <span class="radius">📍 Радиус 50 метров</span><br>
+                    от старого фонаря в парке.
+                </div>
+            `;
+            const codeSection = document.getElementById('codeSection');
+            codeSection.style.display = 'block';
+            codeSection.innerHTML = `
+                <label>
+                    <span class="nfc-icon">📱</span> Введи код с NFC-чипа (только цифры)
+                </label>
+                <div class="code-input-group">
+                    <input type="text" id="codeInput" placeholder="88556143205" maxlength="20" inputmode="numeric" autocomplete="off">
+                    <button id="verifyBtn">🔓 Проверить</button>
+                </div>
+                <div class="code-status" id="codeStatus">Ожидание ввода кода...</div>
+            `;
+            document.getElementById('verifyBtn').addEventListener('click', verifyCode);
+            document.getElementById('codeInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') verifyCode();
+            });
+            document.getElementById('codeInput').addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '');
+            });
+
+            addLog('🔄 Игра сброшена. Начинай охоту за NFC-чипами!', '');
+            renderLevel();
+        }
+    }
+
+    // ----- ИНИЦИАЛИЗАЦИЯ -----
+    function init() {
+        freeBtn.addEventListener('click', handleFree);
+        paidBtn.addEventListener('click', handlePaid);
+        resetBtn.addEventListener('click', resetGame);
+
+        // Ограничиваем ввод только цифрами
+        codeInput.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+        });
+
+        document.getElementById('verifyBtn').addEventListener('click', verifyCode);
+        document.getElementById('codeInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verifyCode();
+        });
+
+        addLog('🚀 Охота началась! Уровень 1. Ищи первый NFC-чип.', '');
+        renderLevel();
+    }
+
+    // Переопределяем renderLevel
+    const originalRender = renderLevel;
+    renderLevel = function() {
+        if (gameCompleted) {
+            levelDisplay.textContent = '🏁';
+            const infoBlock = document.querySelector('.info-block');
+            infoBlock.innerHTML = `
+                <div class="final-block">
+                    <div class="treasure">💎</div>
+                    <div class="coords">${FINAL_COORDS}</div>
+                    <p style="margin-top:20px;color:#b0a0b8;">🔑 Используй эти координаты, чтобы найти клад!</p>
+                </div>
+            `;
+            photoBlock.style.display = 'none';
+            freeBtn.style.display = 'none';
+            paidBtn.style.display = 'none';
+            document.querySelector('.price-tag').style.display = 'none';
+            document.getElementById('codeSection').style.display = 'none';
+            return;
+        }
+
+        const data = getLevelData();
+        if (!data) return;
+
+        levelDisplay.textContent = data.level;
+
+        if (paidForLevel) {
+            infoText.innerHTML = `<span class="coords">${data.coords}</span>`;
+            photoBlock.innerHTML = `<img src="${data.photo}" alt="Фото места">`;
+        } else {
+            infoText.innerHTML = `<span class="radius">${data.radius}</span>`;
+            photoBlock.innerHTML = `
+                <div class="no-photo">
+                    <span>🔒</span>
+                    Фото доступно только<br>при покупке точных координат
+                </div>
+            `;
+        }
+
+        freeBtn.disabled = levelCompleted;
+        paidBtn.disabled = levelCompleted;
+
+        if (levelCompleted) {
+            const codeSection = document.getElementById('codeSection');
+            codeSection.style.display = 'block';
+            codeSection.innerHTML = `
+                <div style="text-align:center;padding:10px;">
+                    <span style="color:#7ddfa0;font-size:1.2rem;">✅ Чип найден и код подтверждён!</span><br>
+                    <button onclick="goToNextLevel()" style="margin-top:12px;padding:14px 40px;background:linear-gradient(135deg,#4a2a5a,#6a3a7a);border:none;border-radius:16px;color:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;border:2px solid #b080c0;">
+                        ➡️ Перейти на следующий уровень
+                    </button>
+                </div>
+            `;
+        } else {
+            const codeSection = document.getElementById('codeSection');
+            codeSection.style.display = 'block';
+            if (!codeSection.querySelector('input')) {
+                codeSection.innerHTML = `
+                    <label>
+                        <span class="nfc-icon">📱</span> Введи код с NFC-чипа (только цифры)
+                    </label>
+                    <div class="code-input-group">
+                        <input type="text" id="codeInput" placeholder="88556143205" maxlength="20" inputmode="numeric" autocomplete="off">
+                        <button id="verifyBtn">🔓 Проверить</button>
+                    </div>
+                    <div class="code-status" id="codeStatus">Ожидание ввода кода...</div>
+                `;
+                document.getElementById('verifyBtn').addEventListener('click', verifyCode);
+                document.getElementById('codeInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') verifyCode();
+                });
+                document.getElementById('codeInput').addEventListener('input', function() {
+                    this.value = this.value.replace(/\D/g, '');
+                });
+            }
+            const status = document.getElementById('codeStatus');
+            if (status) {
+                status.textContent = 'Ожидание ввода кода...';
+                status.className = 'code-status';
+            }
+        }
+    };
+
+    init();
+</script>
+
+</body>
+</html>
