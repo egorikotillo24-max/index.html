@@ -149,7 +149,6 @@
             margin-bottom: 6px;
         }
 
-        /* ВВОД КОДА (только цифры) */
         .code-section {
             background: #0a070e;
             border-radius: 20px;
@@ -251,7 +250,6 @@
             color: #7ddfa0;
         }
 
-        /* КНОПКИ ВЫБОРА */
         .choice-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -459,7 +457,6 @@
 <body>
 
 <div class="app" id="app">
-    <!-- ХЕДЕР -->
     <div class="header">
         <h1>
             🏴‍☠️ NFC HUNT
@@ -470,7 +467,6 @@
         </div>
     </div>
 
-    <!-- ИНФО БЛОК -->
     <div class="info-block">
         <div class="info-label">📍 Информация о местонахождении чипа</div>
         <div class="info-text" id="infoText">
@@ -479,7 +475,6 @@
         </div>
     </div>
 
-    <!-- ФОТО -->
     <div class="photo-placeholder" id="photoBlock">
         <div class="no-photo">
             <span>🔒</span>
@@ -487,7 +482,6 @@
         </div>
     </div>
 
-    <!-- ВВОД ЦИФРОВОГО КОДА -->
     <div class="code-section" id="codeSection">
         <label>
             <span class="nfc-icon">📱</span> Введи код с NFC-чипа (только цифры)
@@ -499,7 +493,6 @@
         <div class="code-status" id="codeStatus">Ожидание ввода кода...</div>
     </div>
 
-    <!-- КНОПКИ ВЫБОРА -->
     <div class="choice-grid">
         <button class="btn-choice btn-free" id="freeBtn">
             🆓 Бесплатно<br>
@@ -515,23 +508,20 @@
         💎 Точные координаты + фото — <strong>99 ₽</strong>
     </div>
 
-    <!-- ЖУРНАЛ -->
     <div class="log" id="logContainer">
         <div class="log-empty">🕵️ Здесь будет история твоих действий...</div>
     </div>
 
-    <!-- СБРОС -->
     <div class="reset-area">
         <button class="btn-reset" id="resetBtn">⟳ Начать сначала</button>
     </div>
 </div>
 
 <script>
-    // ----- БАЗА ДАННЫХ (ЦИФРОВЫЕ КОДЫ) -----
     const LEVEL_CODES = {
-        1: '88556143205',   // код для чипа #1
-        2: '44219876321',   // код для чипа #2
-        3: '99123456789'    // код для чипа #3
+        1: '88556143205',
+        2: '44219876321',
+        3: '99123456789'
     };
 
     const LEVELS = [
@@ -557,14 +547,12 @@
 
     const FINAL_COORDS = '55.7565° N, 37.6180° E';
 
-    // ----- СОСТОЯНИЕ -----
     let currentLevel = 0;
     let levelCompleted = false;
     let gameCompleted = false;
     let logEntries = [];
     let paidForLevel = false;
 
-    // DOM
     const infoText = document.getElementById('infoText');
     const photoBlock = document.getElementById('photoBlock');
     const levelDisplay = document.getElementById('levelDisplay');
@@ -576,7 +564,6 @@
     const logContainer = document.getElementById('logContainer');
     const resetBtn = document.getElementById('resetBtn');
 
-    // ----- ФУНКЦИИ -----
     function getLevelData() {
         if (gameCompleted) return null;
         return LEVELS[currentLevel];
@@ -606,7 +593,6 @@
 
         levelDisplay.textContent = data.level;
 
-        // Инфо: радиус или координаты
         if (paidForLevel) {
             infoText.innerHTML = `<span class="coords">${data.coords}</span>`;
             photoBlock.innerHTML = `<img src="${data.photo}" alt="Фото места">`;
@@ -623,7 +609,6 @@
         freeBtn.disabled = levelCompleted;
         paidBtn.disabled = levelCompleted;
 
-        // Секция кода
         if (levelCompleted) {
             const codeSection = document.getElementById('codeSection');
             codeSection.style.display = 'block';
@@ -653,7 +638,6 @@
                 document.getElementById('codeInput').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') verifyCode();
                 });
-                // Ограничиваем ввод только цифрами
                 document.getElementById('codeInput').addEventListener('input', function() {
                     this.value = this.value.replace(/\D/g, '');
                 });
@@ -685,7 +669,6 @@
         logContainer.scrollTop = 0;
     }
 
-    // ----- ОБРАБОТЧИКИ -----
     function handleFree() {
         if (gameCompleted || levelCompleted) return;
         const data = getLevelData();
@@ -731,7 +714,6 @@
             return;
         }
 
-        // Проверяем, что только цифры
         if (!/^\d+$/.test(inputCode)) {
             codeStatus.textContent = '❌ Код должен содержать только цифры!';
             codeStatus.className = 'code-status error';
@@ -824,108 +806,23 @@
         }
     }
 
-    // ----- ИНИЦИАЛИЗАЦИЯ -----
     function init() {
         freeBtn.addEventListener('click', handleFree);
         paidBtn.addEventListener('click', handlePaid);
         resetBtn.addEventListener('click', resetGame);
 
-        // Ограничиваем ввод только цифрами
         codeInput.addEventListener('input', function() {
             this.value = this.value.replace(/\D/g, '');
         });
 
-        document.getElementById('verifyBtn').addEventListener('click', verifyCode);
-        document.getElementById('codeInput').addEventListener('keypress', (e) => {
+        verifyBtn.addEventListener('click', verifyCode);
+        codeInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') verifyCode();
         });
 
         addLog('🚀 Охота началась! Уровень 1. Ищи первый NFC-чип.', '');
         renderLevel();
     }
-
-    // Переопределяем renderLevel
-    const originalRender = renderLevel;
-    renderLevel = function() {
-        if (gameCompleted) {
-            levelDisplay.textContent = '🏁';
-            const infoBlock = document.querySelector('.info-block');
-            infoBlock.innerHTML = `
-                <div class="final-block">
-                    <div class="treasure">💎</div>
-                    <div class="coords">${FINAL_COORDS}</div>
-                    <p style="margin-top:20px;color:#b0a0b8;">🔑 Используй эти координаты, чтобы найти клад!</p>
-                </div>
-            `;
-            photoBlock.style.display = 'none';
-            freeBtn.style.display = 'none';
-            paidBtn.style.display = 'none';
-            document.querySelector('.price-tag').style.display = 'none';
-            document.getElementById('codeSection').style.display = 'none';
-            return;
-        }
-
-        const data = getLevelData();
-        if (!data) return;
-
-        levelDisplay.textContent = data.level;
-
-        if (paidForLevel) {
-            infoText.innerHTML = `<span class="coords">${data.coords}</span>`;
-            photoBlock.innerHTML = `<img src="${data.photo}" alt="Фото места">`;
-        } else {
-            infoText.innerHTML = `<span class="radius">${data.radius}</span>`;
-            photoBlock.innerHTML = `
-                <div class="no-photo">
-                    <span>🔒</span>
-                    Фото доступно только<br>при покупке точных координат
-                </div>
-            `;
-        }
-
-        freeBtn.disabled = levelCompleted;
-        paidBtn.disabled = levelCompleted;
-
-        if (levelCompleted) {
-            const codeSection = document.getElementById('codeSection');
-            codeSection.style.display = 'block';
-            codeSection.innerHTML = `
-                <div style="text-align:center;padding:10px;">
-                    <span style="color:#7ddfa0;font-size:1.2rem;">✅ Чип найден и код подтверждён!</span><br>
-                    <button onclick="goToNextLevel()" style="margin-top:12px;padding:14px 40px;background:linear-gradient(135deg,#4a2a5a,#6a3a7a);border:none;border-radius:16px;color:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;border:2px solid #b080c0;">
-                        ➡️ Перейти на следующий уровень
-                    </button>
-                </div>
-            `;
-        } else {
-            const codeSection = document.getElementById('codeSection');
-            codeSection.style.display = 'block';
-            if (!codeSection.querySelector('input')) {
-                codeSection.innerHTML = `
-                    <label>
-                        <span class="nfc-icon">📱</span> Введи код с NFC-чипа (только цифры)
-                    </label>
-                    <div class="code-input-group">
-                        <input type="text" id="codeInput" placeholder="88556143205" maxlength="20" inputmode="numeric" autocomplete="off">
-                        <button id="verifyBtn">🔓 Проверить</button>
-                    </div>
-                    <div class="code-status" id="codeStatus">Ожидание ввода кода...</div>
-                `;
-                document.getElementById('verifyBtn').addEventListener('click', verifyCode);
-                document.getElementById('codeInput').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') verifyCode();
-                });
-                document.getElementById('codeInput').addEventListener('input', function() {
-                    this.value = this.value.replace(/\D/g, '');
-                });
-            }
-            const status = document.getElementById('codeStatus');
-            if (status) {
-                status.textContent = 'Ожидание ввода кода...';
-                status.className = 'code-status';
-            }
-        }
-    };
 
     init();
 </script>
